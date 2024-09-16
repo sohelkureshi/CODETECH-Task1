@@ -1,0 +1,113 @@
+/*
+This React application is structured using React Router for client-side routing and Material UI for the UI components. Below is an explanation of the code:
+
+### 1. **React Components**:
+- **DataProvider**: Wraps the entire application with a context provider (likely for managing global states, such as user authentication or application data).
+- **Header**: This is the navigation header component that will be displayed when a user is authenticated.
+- **Home, CreatePost, DetailView, Update, About, Contact, Login**: These are the different pages or components representing parts of the app (like home page, create post page, etc.).
+
+### 2. **PrivateRoute**:
+This is a custom route wrapper to ensure that certain routes are only accessible when the user is authenticated. Here’s how it works:
+
+- **`isAuthenticated`**: This is passed as a prop to check if the user is authenticated. If the user is authenticated and there’s a valid token stored in `sessionStorage` (`accessToken`), the component renders the `Header` and whatever is in the child routes (`<Outlet />`).
+- **`Navigate`**: If the user is not authenticated or no token exists, it redirects them to the `/account` (login) page using the `Navigate` component from `react-router-dom`.
+
+### 3. **Routing Structure**:
+The application is using React Router (`<BrowserRouter>` and `<Routes>`) for navigating between pages.
+
+- **Public Route**:
+  - **`/account`**: Renders the `Login` component where users can authenticate themselves.
+
+- **Private Routes** (protected by `PrivateRoute`):
+  - **`/` (Home)**: If the user is authenticated, it renders the `Home` component.
+  - **`/create`**: Protected route for creating a post. If the user is authenticated, it renders the `CreatePost` component.
+  - **`/details/:id`**: Shows the detailed view of a post based on the post ID in the URL.
+  - **`/update/:id`**: Protected route to update a post, also based on the post ID in the URL.
+  - **`/about`**: Protected route for the "About" page.
+  - **`/contact`**: Protected route for the "Contact" page.
+
+Each private route checks if the user is authenticated. If they are, it renders the corresponding component; otherwise, it redirects to the login page.
+
+### 4. **State Management**:
+- **`isAuthenticated` and `isUserAuthenticated`**: `isAuthenticated` is the state that stores whether the user is authenticated or not. This state is updated via the `isUserAuthenticated` function, which is passed as a prop to the `Login` component.
+
+### 5. **Session Storage**:
+- **`sessionStorage.getItem('accessToken')`**: This checks if an `accessToken` exists in session storage, which acts as a simple check for whether the user is logged in or not. If there’s no token, the user will be redirected to the login page (`/account`).
+
+### Overall Flow:
+- The application starts at the `/account` route where the user can log in.
+- If the login is successful, the `isAuthenticated` state is set to `true`, and the user can access the private routes (like `/`, `/create`, etc.).
+- If the user tries to access any private route without being authenticated, they are redirected to the `/account` page for login.
+
+This setup allows you to control access to different parts of the app based on authentication status.
+*/
+
+
+
+import { useState } from 'react';
+
+import { Box } from '@mui/material';
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
+
+//components
+import DataProvider from './context/DataProvider';
+import Header from './components/header/Header';
+import Home from './components/home/Home';
+import CreatePost from './components/create/CreatePost';
+import DetailView from './components/details/DetailView';
+import Update from './components/create/Update';
+import About from './components/about/About';
+import Contact from './components/contact/Contact';
+import Login from './components/account/Login';
+
+const PrivateRoute = ({ isAuthenticated, ...props }) => {
+  const token = sessionStorage.getItem('accessToken');
+  return isAuthenticated && token ? 
+    <>
+      <Header />
+      <Outlet />
+    </> : <Navigate replace to='/account' />
+};
+
+function App() {
+
+  const [isAuthenticated, isUserAuthenticated] = useState(false);
+
+  return (
+    <DataProvider>
+      <BrowserRouter>
+        <Box style={{ marginTop: 64 }}>
+          <Routes>
+            <Route path='/account' element={<Login isUserAuthenticated={isUserAuthenticated} />} />
+            
+            <Route path='/' element={<PrivateRoute isAuthenticated={isAuthenticated} />} >
+              <Route path='/' element={<Home />} />
+            </Route>
+
+            <Route path='/create' element={<PrivateRoute isAuthenticated={isAuthenticated} />} >
+              <Route path='/create' element={<CreatePost />} />
+            </Route>
+
+            <Route path='/details/:id' element={<PrivateRoute isAuthenticated={isAuthenticated} />} >
+              <Route path='/details/:id' element={<DetailView />} />
+            </Route>
+
+            <Route path='/update/:id' element={<PrivateRoute isAuthenticated={isAuthenticated} />} >
+              <Route path='/update/:id' element={<Update />} />
+            </Route>
+
+            <Route path='/about' element={<PrivateRoute isAuthenticated={isAuthenticated} />} >
+              <Route path='/about' element={<About />} />
+            </Route>
+
+            <Route path='/contact' element={<PrivateRoute isAuthenticated={isAuthenticated} />} >
+              <Route path='/contact' element={<Contact />} />
+            </Route>
+          </Routes>
+        </Box>
+      </BrowserRouter>
+    </DataProvider>
+  );
+}
+
+export default App;
